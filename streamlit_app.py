@@ -24,103 +24,64 @@ API_KEY = st.secrets["OPENAI_API_KEY"]
 ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
 def generate_prompt(task):
-    """Generates a focused prompt for Avionics software tasks."""
-    if task == "Requirement":
-        st.subheader("Define the Software Requirement")
-        feature_name = st.text_input("Feature Name (e.g., Flight Data Logging, Autopilot Mode Indication):")
+    """Generates a prompt for AI-driven improvement/revision of documents based on the task."""
+    if task == "Requirement Improvement":
+        original_requirement = st.text_area("Original Requirement Text:", height=200)
+        final_prompt = f"""
+        Please correct and improve this original software requirement document: {original_requirement}. 
+        The output should be the title of the requirement, User story, and Acceptance Criteria (Table style) including non-function acceptance criteria.
+        """
+        return final_prompt
 
-        if feature_name:
-            final_prompt = f"""
-            Please create a new software requirement document for Jira system via given info {feature_name}
-            """
-        else:
-            final_prompt = ""
+    elif task == "Email/Chat Revision":
+        original_requirement = st.text_area("Original Requirement Text:", height=200)
+        final_prompt = f"""
+        Please correct and improve this original email or chat contents: {original_requirement}. 
+        """
+        return final_prompt
 
-    elif task == "Email/Chat":
-        st.subheader("Compose Professional Communication")
-        recipient = st.text_input("Recipient (e.g., Engineering Team, Certification Authority):")
-        subject = st.text_input("Subject:")
-        key_points = st.text_area("Key Points to Convey (Clearly and concisely):")
-        urgency = st.selectbox("Urgency Level:", ["Normal", "High", "Informational"])
-
-        if recipient and subject and key_points:
-            final_prompt = f"""
-            **Compose a communication (Email/Chat) to:** {recipient}
-
-            **Subject:** {subject}
-
-            **Key Points:**
-            {key_points}
-
-            **Urgency:** {urgency}
-
-            Please draft a professional and clear message addressing the above points, suitable for the Avionics industry context.
-            """
-        else:
-            final_prompt = ""
-
-    elif task == "Monthly Accomplish":
-        st.subheader("Summarize Monthly Progress")
-        month = st.selectbox("Select Month:", ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
-        key_achievements = st.text_area("Key Achievements This Month (Focus on deliverables and progress):")
-        challenges_faced = st.text_area("Key Challenges and Mitigation Strategies:")
-        next_steps = st.text_area("Planned Next Steps for the Following Month:")
-
-        if month and key_achievements:
-            final_prompt = f"""
-            **Monthly Progress Summary for:** {month}
-
-            **Key Achievements:**
-            {key_achievements}
-
-            **Challenges Faced and Mitigation Strategies:**
-            {challenges_faced}
-
-            **Planned Next Steps:**
-            {next_steps}
-
-            Provide a concise and professional summary of the monthly progress based on the above information, suitable for stakeholder reporting in an Avionics software project.
-            """
-        else:
-            final_prompt = ""
+    elif task == "Monthly Accomplishment Refinement":
+        original_requirement = st.text_area("Original Requirement Text:", height=200)
+        final_prompt = f"""
+        Please correct and improve this original contents with bulletin points: {original_requirement}. 
+        """
+        return final_prompt
 
     elif task == "Research":
-        st.subheader("Conduct Targeted Research")
-        research_area = st.text_input("Specific Research Area (e.g., RTOS Comparison, Cybersecurity Standards):")
-        key_questions = st.text_area("Key Questions to Answer (Focus and actionable):")
-        desired_format = st.selectbox("Desired Output Format:", ["Summary Report", "List of Findings", "Comparative Analysis"])
+        original_requirement = st.text_area("Original Requirement Text:", height=200)
+        final_prompt = f"""
+        Please provide basic background knowledge about this: {original_requirement}. And please provide a link for good references.
+        """
+        return final_prompt
 
-        if research_area and key_questions:
-            final_prompt = f"""
-            **Research Topic:** {research_area}
+    return None
 
-            **Key Questions to Answer:**
-            {key_questions}
+st.title("Avionics Document Improvement Tool")
+st.subheader("As a Technical Product Owner, provide the document and improvement criteria.")
 
-            **Desired Output Format:** {desired_format}
-
-            Conduct focused research on the above topic and provide the findings in the format of a '{desired_format}'. Ensure the information is relevant to the Avionics industry and adheres to professional standards.
-            """
-        else:
-            final_prompt = ""
-
-    else:
-        final_prompt = ""
-
-    return final_prompt
-
-
-# UI
-st.title("🧑‍💼 Professional TPO♥")
-st.subheader("As a Technical Product Owner, provide the necessary inputs below.")
-
-task = st.selectbox("Choose Task", ["Requirement", "Email/Chat", "Monthly Accomplish", "Research"])
+task = st.selectbox(
+    "Choose Task",
+    ["Requirement Improvement", "Email/Chat Revision", "Monthly Accomplishment Refinement", "Research"],
+)
 
 final_prompt = generate_prompt(task)
 
 if final_prompt:
-    st.subheader("Generated Prompt for Your Task:")
-    st.text_area("Prompt to use:", value=final_prompt, height=400)
+    if st.button("Rewrite"):
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "contents": [
+                {
+                    "parts": [{"text": final_prompt}]
+                }
+            ]
+        }
 
-if st.button("Start New Task"):
-    st.rerun()
+        response = requests.post(ENDPOINT, headers=headers, data=json.dumps(payload))
+        
+        if response.status_code == 200:
+            result = response.json()
+            rewritten = result["candidates"][0]["content"]["parts"][0]["text"]
+            st.success(rewritten)
+        else:
+            st.error(f"Error {response.status_code}: {response.text}")
