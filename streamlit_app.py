@@ -34,18 +34,7 @@ def generate_prompt(task):
 
         if feature_name and user_story and acceptance_criteria:
             final_prompt = f"""
-            **Software Requirement:** {feature_name}
-
-            **User Story:**
-            {user_story}
-
-            **Acceptance Criteria:**
-            {acceptance_criteria}
-
-            **Technical Constraints:**
-            {technical_constraints}
-
-            Please provide a detailed technical specification and implementation considerations for this requirement, keeping in mind Avionics software development best practices and safety standards.
+            Please create a new software requirement document for Jira system via given info {feature_name}, {user_story}, {acceptance_criteria}, {technical_constraints}
             """
         else:
             final_prompt = ""
