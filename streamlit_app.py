@@ -56,8 +56,7 @@ def generate_prompt(task):
 
     return None
 
-st.title("Avionics Document Improvement Tool")
-st.subheader("As a Technical Product Owner, provide the document and improvement criteria.")
+st.title("Professional TPO")
 
 task = st.selectbox(
     "Choose Task",
