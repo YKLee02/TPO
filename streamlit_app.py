@@ -28,13 +28,10 @@ def generate_prompt(task):
     if task == "Requirement":
         st.subheader("Define the Software Requirement")
         feature_name = st.text_input("Feature Name (e.g., Flight Data Logging, Autopilot Mode Indication):")
-        user_story = st.text_area("User Story (As a [user role], I want [goal] so that [benefit]):")
-        acceptance_criteria = st.text_area("Acceptance Criteria (Specific, measurable conditions of satisfaction):")
-        technical_constraints = st.text_area("Technical Constraints (e.g., DO-178C Level, Interface Specifications):")
 
-        if feature_name and user_story and acceptance_criteria:
+        if feature_name:
             final_prompt = f"""
-            Please create a new software requirement document for Jira system via given info {feature_name}, {user_story}, {acceptance_criteria}, {technical_constraints}
+            Please create a new software requirement document for Jira system via given info {feature_name}
             """
         else:
             final_prompt = ""
