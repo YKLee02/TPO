@@ -10,14 +10,20 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state["authenticated"]:
     st.title("🔒 Access Protected")
-    password = st.text_input("Enter password", type="password")
-    if st.button("Submit"):
-        if password == PASSWORD:
-            st.session_state["authenticated"] = True
-            st.rerun()
-        else:
-            st.error("❌ Incorrect password")
+
+    # ✨ Use form to allow Enter key to submit
+    with st.form("password_form"):
+        password = st.text_input("Enter password", type="password")
+        submitted = st.form_submit_button("Submit")  # Form's submit button
+
+        if submitted:
+            if password == PASSWORD:
+                st.session_state["authenticated"] = True
+                st.rerun()
+            else:
+                st.error("❌ Incorrect password")
     st.stop()
+
 
 # ✅ API 키 설정
 API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -65,6 +71,10 @@ task = st.selectbox(
 
 final_prompt = generate_prompt(task)
 
+# 🆕 Initialize session state to store previous AI answer
+if "previous_answer" not in st.session_state:
+    st.session_state["previous_answer"] = ""
+
 if final_prompt:
     if st.button("Rewrite"):
         headers = {"Content-Type": "application/json"}
@@ -82,5 +92,43 @@ if final_prompt:
             result = response.json()
             rewritten = result["candidates"][0]["content"]["parts"][0]["text"]
             st.success(rewritten)
+
+            # 🆕 Save the rewritten text
+            st.session_state["previous_answer"] = rewritten
         else:
             st.error(f"Error {response.status_code}: {response.text}")
+
+# 🆕 Feedback section to revise previous AI output
+if st.session_state["previous_answer"]:
+    st.subheader("🔄 Revise Previous Answer with Feedback")
+    feedback = st.text_area("Enter your feedback to improve the previous answer", key="feedback_input", height=100)
+    
+    if st.button("Revise with Feedback"):
+        if feedback.strip() == "":
+            st.warning("⚠️ Please enter your feedback before revising.")
+        else:
+            revised_prompt = f"""
+            Here is the previous AI answer: "{st.session_state['previous_answer']}".
+            Please revise it based on this user feedback: "{feedback}".
+            """
+
+            headers = {"Content-Type": "application/json"}
+            payload = {
+                "contents": [
+                    {
+                        "parts": [{"text": revised_prompt}]
+                    }
+                ]
+            }
+
+            response = requests.post(ENDPOINT, headers=headers, data=json.dumps(payload))
+
+            if response.status_code == 200:
+                result = response.json()
+                revised_text = result["candidates"][0]["content"]["parts"][0]["text"]
+                st.success(revised_text)
+                
+                # 🆕 Update previous_answer with new revision
+                st.session_state["previous_answer"] = revised_text
+            else:
+                st.error(f"Error {response.status_code}: {response.text}")
